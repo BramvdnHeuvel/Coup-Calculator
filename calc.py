@@ -7,16 +7,6 @@ class Player:
         self.name = name
         self.money = 0
         self.cards = []
-    
-    def moves(self):
-        if self.money >= 7:
-            yield functions['coup']
-        if self.money < 10:
-            yield functions['tax']
-            yield functions['foreign_aid']
-
-            for card in list(set(self.cards)):
-                yield functions[card]
 
 class Game:
     def __init__(self, names):
@@ -33,7 +23,7 @@ class Game:
             'senatore': 1,
             'sabotatore': 1
         }
-    
+
     def __mover_get(self):
         return self.players[self.move_cursor]
 

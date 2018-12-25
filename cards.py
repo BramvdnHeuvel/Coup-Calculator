@@ -1,57 +1,52 @@
 from enum import Enum
+import random
 
-functions = {
-    'coup':         coup,
-    'tax':          tax_money,
-    'foreign_aid':  foreign_aid,
-    'assassina':    assassina,
-    'capitano':     capitano,
-    'ambaciatore':  ambasciatore,
-    'duca':         duca,
-    'inquisitore':  inquisitore,
-    'sabotatore':   sabotatore
-}
-
-def moves(self):
+def random_move(self):
     mover = self.mover
+    possible_moves = []
 
     if mover.money >= 7:
         for target in self.players:
             if target is not mover:
                 for card in target.cards:
-                    yield functions['coup'](target, card)
+                    possible_moves.append(functions['coup'](target, card))
 
     if mover.money < 10:
-        yield functions['tax']
+        possible_moves.append(functions['tax'])
         if not self.blocked_by('duca') and not self.blocked_by('inquisitore'):
-            yield functions['foreign_aid']
+            possible_moves.append(functions['foreign_aid'])
 
         if 'assassina' in mover.cards:
-            for target in self.players:
+            for i in range(20):
+                target = random.choice(self.players)
                 if target is not mover and 'contessa' not in target.cards:
-                    for card in target.cards:
-                        yield functions['assassin'](target, card)
+                    card = random.choice(target.cards)
+                    possible_moves.append(functions['assassina'](target, card))
+                    break
         
         if 'capitano' in mover.cards:
-            for target in self.players:
-                if 'capitano' not in target.cards and 'ambasciator' not in target.cards and target.money > 0:
-                    yield functions['capitano'](target)
+            for i in range(20):
+                target = random.choice(self.players)
+                if 'capitano' not in target.cards and 'ambasciatore' not in target.cards and target.money > 0:
+                    possible_moves.append(functions['capitano'](target))
+                    break
         
-        if 'ambasciator' in mover.cards:
-            for option in functions['ambasciator'](self):
-                yield option
+        if 'ambasciatore' in mover.cards:
+            possible_moves.append(functions['ambasciatore'])
         
         if 'duca' in mover.cards:
-            yield functions['duca']
+            possible_moves.append(functions['duca'])
         
         if 'inquisitore' in mover.cards:
-            for target in self.players:
-                for card in target.cards:
-                    for choice in functions['inquisitore'](target, card):
-                        yield choice
+            target = random.choice(self.players)
+            card = random.choice(target.cards)
+            possible_moves.append(functions['inquisitore'](target, card))
         
         if 'sabotatore' in mover.cards:
-            yield functions['sabotatore']
+            possible_moves.append(functions['sabotatore'])
+    
+    random.choice(possible_moves)(self)
+    return self
 
 def coup(target, card):
     def coup(game):
@@ -79,26 +74,18 @@ def capitano(target):
     return capitano
 
 def ambasciatore(game):
-    def ambasciatore(card1, card2, others):
-        def ambasciatore(game):
-            # Shuffle other cards back into the deck.
-            others.remove(card1)
-            others.remove(card2)
-            for card in others:
-                game.deck[card] += 1
+    game.mover.cards.append(game.draw_card())
+    game.mover.cards.append(game.draw_card())
+    
+    chosen_cards = random.sample(game.mover.cards, 2)
 
-            # Assign chosen cards to player.
-            game.mover.cards = [card1, card2]
-        return ambasciatore
+    for card in game.mover.cards:
+        game.deck[card] += 1
 
-    full_list = game.mover.cards
-    full_list.append(game.draw_card())
-    full_list.append(game.draw_card())
-
-    list_length = len(full_list)
-    for i in range(list_length-1):
-        for j in range(i+1, list_length):
-            yield ambasciatore(full_list[i], full_list[j], full_list)
+    for card in chosen_cards:
+        game.deck[card] += -1
+    
+    game.mover.cards = chosen_cards
 
 def duca(game):
     game.mover.money += 3
@@ -111,3 +98,15 @@ def inquisitore(target, card):
 
 def sabotatore(game):
     game.mover.money += 2
+
+functions = {
+    'coup':         coup,
+    'tax':          tax_money,
+    'foreign_aid':  foreign_aid,
+    'assassina':    assassina,
+    'capitano':     capitano,
+    'ambasciatore':  ambasciatore,
+    'duca':         duca,
+    'inquisitore':  inquisitore,
+    'sabotatore':   sabotatore
+}

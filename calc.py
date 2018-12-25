@@ -1,4 +1,4 @@
-from cards import functions
+from cards import random_move
 from copy import deepcopy
 import random
 
@@ -7,6 +7,9 @@ class Player:
         self.name = name
         self.money = 0
         self.cards = []
+
+    def __repr__(self):
+        return f'<P {self.name} €{self.money} C{self.cards}>'
 
 class Game:
     def __init__(self, names):
@@ -29,18 +32,26 @@ class Game:
 
     mover = property(__mover_get)
 
+    def play_game(self, std_start=False):
+        if std_start:
+            for player in self.players:
+                player.cards = [self.draw_card(), self.draw_card()]
+        
+        return self.make_move()
+
     def make_move(self):
+        mover = self.mover
         self.players = [player for player in self.players if len(player.cards) > 0]
+        for i in range(len(self.players)):
+            if self.players[i] is mover:
+                self.move_cursor = (i + 1) % len(self.players)
 
         if len(self.players) > 1:
-            winners = []
-
-            for move in self.mover.moves:
-                next_game_state = deepcopy(self)
-                move(next_game_state)
+            self = random_move(self)
+            return self.make_move()
 
         else:
-            return 
+            return self.players[0].name
 
     def blocked_by(self,role):
         for i in range(len(self.players)):
